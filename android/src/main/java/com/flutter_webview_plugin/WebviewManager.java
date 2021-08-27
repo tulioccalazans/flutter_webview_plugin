@@ -5,6 +5,8 @@ import android.net.Uri;
 import android.annotation.TargetApi;
 import android.app.Activity;
 import android.content.Context;
+import android.content.pm.PackageManager;
+import android.Manifest;
 import android.net.http.SslError;
 import android.os.Build;
 import android.os.Handler;
@@ -13,6 +15,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.webkit.CookieManager;
 import android.webkit.GeolocationPermissions;
+import android.webkit.PermissionRequest;
 import android.webkit.SslErrorHandler;
 import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
@@ -22,6 +25,8 @@ import android.widget.FrameLayout;
 import android.provider.MediaStore;
 
 import androidx.core.content.FileProvider;
+import androidx.core.content.ContextCompat;
+import androidx.core.app.ActivityCompat;
 
 import android.database.Cursor;
 import android.provider.OpenableColumns;
@@ -264,6 +269,18 @@ class WebviewManager {
             public void onGeolocationPermissionsShowPrompt(String origin, GeolocationPermissions.Callback callback) {
                 callback.invoke(origin, true, false);
             }
+
+            @Override
+            public void onPermissionRequest(PermissionRequest request) {
+                if (ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) ==
+                        PackageManager.PERMISSION_GRANTED) {
+                    request.grant(request.getResources());
+                } else {
+                    ActivityCompat.requestPermissions(activity,
+                            new String[] { Manifest.permission.CAMERA },
+                            1);
+                }
+            }
         });
         registerJavaScriptChannelNames(channelNames);
     }
@@ -400,7 +417,7 @@ class WebviewManager {
         webView.getSettings().setUseWideViewPort(useWideViewPort);
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
-            webView.getSettings().setMediaPlaybackRequiresUserGesture(mediaPlaybackRequiresUserGesture);
+            webView.getSettings().setMediaPlaybackRequiresUserGesture(false);
         }
 
         // Handle debugging
